@@ -1,5 +1,6 @@
 import pandas as pd
 import warnings
+import json
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import locale
 locale.setlocale( locale.LC_ALL, 'en_US.UTF-8' ) 
@@ -8,6 +9,43 @@ locale.setlocale( locale.LC_ALL, 'en_US.UTF-8' )
 
 
 #getting all the data from ratings col in csv, putting in a list. putting None for empty cells
+
+def clean_data(csv):
+    data = pd.read_csv(csv)
+    count = 0;
+    for line in range(2000): # could use len(data) here, but requirements only say >=1000 values
+        raw_sellers = data.iloc[line]['sellers']
+        if raw_sellers == raw_sellers: # will only work with rows that have sellers
+            count += 1
+            process_seller_row(data, line)
+            # add more helper functions to process other values per row (ie, product, review, etc.)
+        else:
+            continue
+    print(count)
+
+def process_seller_row(data, line):
+    # print('---- new product ----')
+    string_json_sellers = data.iloc[line]['sellers'].replace('=>', ':')
+    json_sellers = json.loads(string_json_sellers)
+    has_multiple_sellers = isinstance(json_sellers['seller'], list)
+    sellers = json_sellers['seller']
+    if has_multiple_sellers:
+        for seller in sellers:
+            process_single_seller(seller)
+    else:
+        process_single_seller(sellers)
+
+def process_single_seller(seller):
+    # print('---- new seller ----')
+    seller_price = 0.00
+    seller_name = ''
+    for attr, value in seller.items():
+        if ('Seller_name' in attr):
+            seller_name = value
+        if ('Seller_price' in attr):
+            seller_price = value
+    # print(seller_name)
+    # print(seller_price)
 
 def get_all_ratings(csv):
     data = pd.read_csv(csv) #reads in the csv
@@ -60,9 +98,10 @@ def get_all_reviewinfo(csv):
             all_review_info[i]=None #keys of dictioniaries are just the row number
     return all_review_info
 
-all_ratings = get_all_ratings('amazon_co-ecommerce_sample.csv')
-all_numberofreviews = get_all_numberofreviews('amazon_co-ecommerce_sample.csv')
-get_all_reviewinfo = print(get_all_reviewinfo('amazon_co-ecommerce_sample.csv'))
+# all_ratings = print(len(get_all_ratings('amazon_co-ecommerce_sample.csv')))
+# all_numberofreviews = print(len(get_all_numberofreviews('amazon_co-ecommerce_sample.csv')))
+# get_all_reviewinfo = print(len(get_all_reviewinfo('amazon_co-ecommerce_sample.csv')))
+clean_data('amazon_co-ecommerce_sample.csv')
 
 
 
