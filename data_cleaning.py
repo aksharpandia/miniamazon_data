@@ -84,18 +84,33 @@ def get_all_reviewinfo(csv):
     for i in range(len((data['customer_reviews']))):
         count += 1
         raw_review_info = data.iloc[i]['customer_reviews']
+        modelNum = data.iloc[i]['uniq_id']
         if raw_review_info == raw_review_info:
-            review_info = raw_review_info.strip().split("//")
-            commentary = review_info[4]
-            date = review_info[2].strip()#getting date
-            misc = review_info[3].split()
-            for idx in range(len(misc)):#finding where in the string the name is, it's right before on
-                if misc[idx]=='on':
-                    on = idx
-            reviewer_name = ' '.join(misc[1:on])
-            all_review_info[i]=[reviewer_name, commentary, date]
+            separate_reviews = raw_review_info.strip().split("|") #finding each separate review for each product, then decomposing each specific review
+            for rev in separate_reviews:
+                review_info = rev.split(" // ")
+                if len(review_info) > 2: #some reviews for a product are incomplete, so we will skip them. for example, product in row 1704 has an
+                    headline = review_info[0].strip()
+                    #checking if commentary exists; if it doesn't just inserting nothing for commentary
+                    try:
+                        commentary = review_info[4].strip()
+                    except IndexError:
+                        commentary = ""
+                    date = review_info[2].strip()#getting date
+                    misc = review_info[3].split()
+                    user_rating = float(review_info[1].strip())
+
+                    for idx in range(len(misc)):#finding where in the string the name is, it's right before on
+                        if misc[idx]=='on':
+                            on = idx
+                    reviewer_name = ' '.join(misc[1:on])
+
+                    if i not in all_review_info: #if a dict entry does not already exist for a product
+                        all_review_info[modelNum]=[[user_rating, headline, commentary, date, reviewer_name, modelNum]]
+                    else:
+                        all_review_info[modelNum].append([user_rating, headline, commentary, date, reviewer_name, modelNum])
         else:
-            all_review_info[i]=None #keys of dictioniaries are just the row number
+            all_review_info[modelNum]=None #keys of dictioniaries are just the row number
     return all_review_info
 
 # all_ratings = print(len(get_all_ratings('amazon_co-ecommerce_sample.csv')))
